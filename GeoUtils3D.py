@@ -7,11 +7,13 @@ Plane / Face:   numpy.array([Point, Point, Point])"""
 import numpy as np
 
 def calculate_normal(face):
-    """Calculates normal of a face defined by 3 points in 3D space."""
+    """Calculates normal of a face defined by 3 points in 3D space.
+    Returns the normal."""
     return np.cross(face[1]-face[0], face[2]-face[0])
 
 def dist_point_point(point_0, point_1):
-    """Calculates the distance between two points in 3D space."""
+    """Calculates the distance between two points in 3D space.
+    Returns the scalar distance."""
     if type(point_0) != np.ndarray:
         point_0 = np.asarray(point_0)
     if type(point_1) != np.ndarray:
@@ -21,7 +23,8 @@ def dist_point_point(point_0, point_1):
     return np.linalg.norm(vector)
 
 def dist_point_line(point, line):
-    """Calculates the distance between a point and a line defined by 2 points in 3D space"""
+    """Calculates the distance between a point and a line defined by 2 points in 3D space.
+    Returns the scalar distance."""
     if type(point) != np.ndarray:
         point = np.asarray(point)
     if type(line) != np.ndarray:
@@ -32,7 +35,8 @@ def dist_point_line(point, line):
     return num / np.linalg.norm(line_vector)
 
 def dist_point_plane(point, plane):
-    """Calculates the distance of a point to a plane defined by 3 points in 3D space."""
+    """Calculates the distance of a point to a plane defined by 3 points in 3D space.
+    Returns the scalar distance."""
     if type(point) != np.ndarray:
         point = np.asarray(point)
     if type(plane) != np.ndarray:
@@ -44,7 +48,8 @@ def dist_point_plane(point, plane):
 
 def intersection_line_plane(line, plane):
     """Calculates the intersection point between a line defined by 2 points
-    and a plane defined by 3 points in 3D space."""
+    and a plane defined by 3 points in 3D space.
+    Returns the intersection point."""
     line_vector = line[1] - line[0]
     normal = calculate_normal(plane)
     num = np.dot(normal, (plane[0] - line[0]))
@@ -57,7 +62,8 @@ def map_xyz_to_uv(origin, u_axis, normal, point):
     origin: origin of local coordinate system
     u_axis: vector defining local U axis
     normal: normal pointing out of UV plane
-    coords: coordinates to be translated"""
+    point: coordinates to be translated
+    Returns the UV coordinates of point."""
     if type(origin) != np.ndarray:
         origin = np.asarray(origin)
     if type(u_axis) != np.ndarray:
@@ -77,8 +83,10 @@ def map_xyz_to_uv(origin, u_axis, normal, point):
     return uv_coords
 
 def point_in_triangle(face_uv, point_uv):
-    """Calculates whether point is within bounds of given triangular face in 2D space."""
-
+    """Calculates whether point is within bounds of given triangular face in 2D space.
+    face_uv: triangle in 2D space defined by 3 points
+    point_uv: point in 2D space
+    Returns true if point is inside or on the edges of a triangle, else returns false."""
     #check whether point is on the same side of an edge as the third vertex of the triangle
     alignment = lambda p0, p1, line: np.dot(np.cross(line[1] - line[0], p0 - line[0]),\
                                       np.cross(line[1] - line[0], p1 - line[0])) >= 0
@@ -88,3 +96,18 @@ def point_in_triangle(face_uv, point_uv):
         edges.append(np.array([face_uv[i%3], face_uv[(i+1)%3]]))
     return alignment(point_uv, face_uv[0], edges[1]) and alignment(point_uv, face_uv[1], edges[2]) and\
         alignment(point_uv, face_uv[2], edges[0])
+
+def project_vector(vector_0, vector_1):
+    """Projects vector_0 onto vector_1 and returns the resulting vector.
+    vector_0, vector_1: simple vectors in 3D space
+    Returns the projected vector."""
+    if type(vector_0) != np.ndarray:
+        vector_0 = np.asarray(vector_0)
+    if type(vector_1) != np.ndarray:
+        vector_1 = np.asarray(vector_1)
+
+    num = np.dot(vector_1, vector_0)
+    print(num)
+    den = np.dot(vector_1, vector_1)
+    print(den)
+    return num / den * vector_1

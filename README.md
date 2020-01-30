@@ -2,7 +2,8 @@
 Incomplete list of utility functions for 3D geometry operations. Will be updated irregularily.
 
 ## Basic Usage
-Primitives are implemented as named tuples. See Python documentation `collections.namedtuple`
+Primitives are implemented as named tuples. See Python documentation `collections.namedtuple`.
+Technically, points in 3D space can be expressed as vectors, but I chose to differentiate between points and vectors for sake of clarity. Points are thus named tuples and vectors Numpy arrays.
 
 ### 3D geometry
 The primitives point, line and plane are defined via coordinates in 3D space.

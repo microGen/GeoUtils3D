@@ -9,8 +9,6 @@ Licensed under the Mozilla Public License 2.0
 import numpy as np
 from collections import namedtuple
 
-__version__ = '0.2'
-
 Point = namedtuple('Point', ['x', 'y', 'z'])
 PointUV = namedtuple('PointUV', ['u', 'v'])
 Line = namedtuple('Line', ['Point_0', 'Point_1'])

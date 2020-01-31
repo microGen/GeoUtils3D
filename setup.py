@@ -5,7 +5,7 @@ with open("README.md", "r") as readme:
 
 setuptools.setup(
     name="geoutils3D",
-    version="0.2.1",
+    version="0.2.2",
     author="N. Wichmann",
     author_email="-", #T.B.D.
     description="Utilities for 3D geometry operations",

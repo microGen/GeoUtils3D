@@ -150,10 +150,11 @@ class Plane:
         if type(mode) != str:
             raise TypeError("mode expected: str")
         else:
-            self.__constraint_0 = vec(constraint_0)
-            self.__constraint_1 = vec(constraint_1)
-            self.__constraint_2 = vec(constraint_2)
-            self.__mode = mode
+            if mode == 'points' or 'vector' or 'normal':
+                self.__constraint_0 = vec(constraint_0)
+                self.__constraint_1 = vec(constraint_1)
+                self.__constraint_2 = vec(constraint_2)
+                self.__mode = mode
             else:
                 errstring = f"Unknown mode: {mode}"
                 raise ValueError(errstring)

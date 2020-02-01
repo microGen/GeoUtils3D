@@ -6,13 +6,46 @@ Licensed under the Mozilla Public License 2.0
 (see attached License.txt or https://www.mozilla.org/en-US/MPL/2.0/)
 """
 
-from numpy import array as array
-from numpy import ndarray as ndarray
-from numpy import cross as npcross
+from numpy import array
+from numpy import ndarray
+from numpy import cross
 
 # conversion between vector and point representation
 vec = lambda constr: constr if type(constr) == ndarray else constr.coords
 pt = lambda constr: constr if type(constr) == Point else Point(constr)
+
+def _modecheck_type(mode_var) -> str:
+    """Checks whether user input for mode is string. If yes, makes sure that it is lowercase.
+    ARGS:
+        mode_var: user input for mode selection
+    RETURNS:
+        mode_lower (str): lowercase mode selection string
+    """
+    if type(mode_var) != str:
+        raise TypeError("Expected type for mode: str")
+    mode_lower = mode_var.lower()
+    return mode_lower
+
+def _modecheck_val(mode_var):
+    """Checks whether user input for mode is 'point' or 'vector'. If not, raises ValueError.
+    ARGS:
+        mode_var: user input for mode selection
+    """
+    if mode_var != 'point' and mode_var != 'vector':
+        raise ValueError("Mode must be either \'point\' or \'vector\'")
+
+def _mode_return(return_var: ndarray, mode_var: str):
+    """Switches the point representation between Point object and vector.
+    ARGS:
+        return_var (ndarray): variable to be returned by calling method
+        mode_var (str): mode selector. Either 'point' or 'vector'
+    RETURNS:
+        If mode == 'point': Point object, else: ndarray
+    """
+    if mode_var == 'point':
+        return Point(return_var)
+    else:
+        return return_var
 
 class Point:
     """Point primitive"""
@@ -80,52 +113,81 @@ class Point:
 class Line:
     """Line primitive"""
 
-    def __init__(self, constraint_0, constraint_1):
+    def __init__(self, constraint_0, constraint_1, mode: str):
         """Creates line in 2D or 3D space
         ARGS:
-            constraint_0: Point object or ndarray representing a vector to base point
-            constraint_1: Point object or ndarray representing a vector parallel to line
+            constraint_0:
+                Point object or ndarray representing a vector to (first) base point
+            constraint_1:
+                Point object or ndarray representing a vector to second base point
+                or ndarray representing vector parallel to line
+            mode (str): 'point' for defining line with two points or 'vector' for point and vector form
         """
-        if type(constraint_0) == Point:
-            self.__base = constraint_0
-        elif type(constraint_0) == ndarray:
-            self.__base = Point(constraint_0)
+        mode = _modecheck_type(mode)
+        _modecheck_val(mode)
+        if type(constraint_0) != Point and type(constraint_0) != ndarray:
+            raise TypeError("Argument \'constraint_0\' takes Point object or ndarray.")
+        self.__point_a = vec(constraint_0)
+        if mode == 'point':
+            if type(constraint_1) != Point and type(constraint_1) != ndarray:
+                raise TypeError("Argument \'constraint_1\' takes Point object or ndarray in mode \'point\'.")
+            else:
+                self.__point_b = vec(constraint_1)
+                self.__vector = self.__point_b - self.__point_a
         else:
-            raise TypeError
-
-        if type(constraint_1) == Point:
-            self.__vector = constraint_1.coords - constraint_0.coords
-        elif type(constraint_1) == ndarray:
-            self.__vector = constraint_1
-        else:
-            raise TypeError
+            if type(constraint_1) != ndarray:
+                raise TypeError("Argument \'constraint_1\' takes ndarray in mode \'vector\'.")
+            else:
+                self.__vector = vec(constraint_1)
+                self.__point_b = self.__point_a + self.__vector
 
     @property
-    def base(self) -> Point:
-        return self.__base
+    def point_a(self, mode: str = 'point'):
+        mode = _modecheck_type(mode)
+        _modecheck_val(mode)
+        return _mode_return(self.__point_a, mode)
 
-    @base.setter
-    def base(self, new_base: Point):
-        self.__base = new_base
+    @point_a.setter
+    def point_a(self, new_const):
+        self.__point_a = vec(new_const)
+        self.__vector = self.__point_b - self.__point_a
 
     @property
-    def vector(self) -> ndarray:
+    def point_b(self, mode: str = 'point'):
+        mode = _modecheck_type(mode)
+        _modecheck_val(mode)
+        return _mode_return(self.__point_b, mode)
+
+    @point_b.setter
+    def point_b(self, new_const):
+        self.__point_b = vec(new_const)
+        self.__vector = self.__point_b - self.__point_a
+
+    @property
+    def vector(self):
         return self.__vector
 
     @vector.setter
     def vector(self, new_vector: ndarray):
         self.__vector = new_vector
+        self.__point_b = self.__point_a + self.__vector
 
-    def point(self, scale: float) -> ndarray:
+
+    def point(self, scale: float, mode: str = 'point'):
         """Returns a point on the line.
         ARGS:
             scale (float): scales the direction vector of the line extending from base point
+            mode (str): 'point' or 'vector', controls return format of method
         RETURNS:
-            point_on_line (ndarray): point coordinates
+            point_on_line: Point object if mode == 'point', ndarray if mode == 'vector'
         """
-        point_on_line = self.__base.coords + scale * self.__vector
-        return point_on_line
-
+        mode = _modecheck_type(mode)
+        _modecheck_val(mode)
+        point_on_line = self.__point_a + scale * self.__vector
+        if mode == 'point':
+            return Point(point_on_line)
+        else:
+            return point_on_line
 
 class Plane:
     "Plane primitive"
@@ -149,40 +211,60 @@ class Plane:
                 or ndarray representing vector normal to plane
             mode (str): "points", "vector", "normal" for plane representation
         """
-        mode = self.__modecheck(mode)
+        mode = _modecheck_type(mode)
         if mode != 'points' and mode != 'vector' and mode != 'normal':
             errstring = f"Unknown mode: {mode}"
             raise ValueError(errstring)
 
-        self.__base = vec(constraint_0)
-        self.__constraint_1 = vec(constraint_1)
-        self.__constraint_2 = vec(constraint_2)
+        self.__point_a = vec(constraint_0)
 
         if mode == 'points':
-            self.__vector_a = self.__constraint_1 - self.__base
-            self.__vector_b = self.__constraint_2 - self.__base
+            self.__point_b = vec(constraint_1)
+            self.__point_c = vec(constraint_2)
+            self.__vector_u = self.__point_b - self.__point_a
+            self.__vector_v = self.__point_c - self.__point_a
         else:
-            self.__vector_a = self.__constraint_1
+            self.__vector_u = vec(constraint_1)
+            self.__point_b = self.__point_a + self.__vector_u
             if mode == 'vector':
-                self.__vector_b = self.__constraint_2
+                self.__vector_v = vec(constraint_2)
             else:
                 # generate second plane defining vector to calculate points on plane
-                self.__vector_b = npcross(self.__constraint_2, self.__vector_a)
-        self.__normal = npcross(self.__vector_a, self.__vector_b)
+                self.__vector_v = cross(self.__point_c, self.__vector_u)
+            self.__point_c = self.__point_a + self.__vector_v
+        self.__normal = cross(self.__vector_u, self.__vector_v)
 
-    def __modecheck(self, mode_var) -> object:
-        """Checks whether user input for mode is string. If yes, makes sure that it is lowercase.
-        ARGS:
-            mode_var: user input for mode selection
-        RETURNS:
-            mode_lower (str): lowercase mode selection string
-        """
-        if type(mode_var) != str:
-            raise TypeError("Expected type for mode: str")
-        mode_lower = mode_var.lower()
-        return mode_lower
+    @property
+    def point_a(self, mode: str = 'point'):
+        mode = _modecheck_type(mode)
+        _modecheck_val()
+        return _mode_return(self.__point_a, mode)
 
-    def point(self, scale_a: float, scale_b: float, mode: str = "point"):
+    @point_a.setter
+    def point_a(self, new_const):
+        self.__point_a = vec(new_const)
+
+    @property
+    def point_b(self, mode: str = 'point'):
+        mode = _modecheck_type(mode)
+        _modecheck_val()
+        return _mode_return(self.__point_b, mode)
+
+    @point_b.setter
+    def point_b(self, new_const):
+        self.__point_b = vec(new_const)
+
+    @property
+    def point_c(self, mode: str = 'point'):
+        mode = _modecheck_type(mode)
+        _modecheck_val()
+        return _mode_return(self.__point_c, mode)
+
+    @point_c.setter
+    def point_c(self, new_const):
+        self.__point_c = vec(new_const)
+
+    def point(self, scale_a: float, scale_b: float, mode: str = 'point'):
         """Calculates a point on the plane
         ARGS:
            scale_a (float): scales vector a
@@ -191,10 +273,10 @@ class Plane:
         RETURNS:
             point_on_plane: Point on plane, determined by scaling defining vectors. Either Point object or ndarray
         """
-        mode = self.__modecheck(mode)
+        mode = _modecheck_type(mode)
         if mode != 'point' and mode != 'vector':
             raise ValueError("Mode must be either \'point\' or \'vector\'")
-        point_on_plane = self.__base + scale_a * self.__vector_b + scale_b * self.__vector_b
+        point_on_plane = self.__point_a + scale_a * self.__vector_v + scale_b * self.__vector_v
         if mode == 'point':
             return Point(point_on_plane)
         else:

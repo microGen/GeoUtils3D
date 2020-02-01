@@ -8,6 +8,7 @@ Licensed under the Mozilla Public License 2.0
 
 from numpy import array as array
 from numpy import ndarray as ndarray
+from numpy import cross as npcross
 
 # conversion between vector and point representation
 vec = lambda constr: constr if type(constr) == ndarray else constr.coords
@@ -15,7 +16,7 @@ pt = lambda constr: constr if type(constr) == Point else Point(constr)
 
 class Point:
     """Point primitive"""
-    #TO DO: Allow point creation by numpy array
+    #TO DO: Implement type and value checking of setters!
 
     def __init__(self, *coords):
         """Creates point in 2D or 3D space.
@@ -23,21 +24,22 @@ class Point:
             coords: ndarray of 2 or 3 elements
                     or 2 or 3 float arguments
         """
-        if len(coords) == 1 and type(coords) == ndarray:
-            if 2 <= len(coords) <= 3:
-                self.__coords = coords
+        if len(coords) == 1 and type(coords[0]) == ndarray:
+            if 2 <= len(coords[0]) <= 3:
+                self.__coords = coords[0]
             else:
                 raise ValueError("Point currently only works in 2D and 3D space.")
         elif 1 < len(coords) <= 3:
             self.__coords = array(coords)
-            self.__x = coords[0]
-            self.__y = coords[1]
-            if len(coords) == 3:
-                self.__z = coords[2]
-            else:
-                self.__z = None
         else:
-            raise TypeError
+            raise TypeError("Point constructor takes either one ndarray or 2 or 3 floats as arguments.")
+
+        self.__x = self.__coords[0]
+        self.__y = self.__coords[1]
+        if len(coords) == 3:
+            self.__z = self.__coords[2]
+        else:
+            self.__z = None
 
     @property
     def x(self) -> float:
@@ -117,9 +119,9 @@ class Line:
     def point(self, scale: float) -> ndarray:
         """Returns a point on the line.
         ARGS:
-            scale: float, scales the direction vector of the line extending from base point
+            scale (float): scales the direction vector of the line extending from base point
         RETURNS:
-            point_on_line: numpy array of point coordinates
+            point_on_line (ndarray): point coordinates
         """
         point_on_line = self.__base.coords + scale * self.__vector
         return point_on_line
@@ -147,14 +149,53 @@ class Plane:
                 or ndarray representing vector normal to plane
             mode (str): "points", "vector", "normal" for plane representation
         """
-        if type(mode) != str:
-            raise TypeError("mode expected: str")
+        mode = self.__modecheck(mode)
+        if mode != 'points' and mode != 'vector' and mode != 'normal':
+            errstring = f"Unknown mode: {mode}"
+            raise ValueError(errstring)
+
+        self.__base = vec(constraint_0)
+        self.__constraint_1 = vec(constraint_1)
+        self.__constraint_2 = vec(constraint_2)
+
+        if mode == 'points':
+            self.__vector_a = self.__constraint_1 - self.__base
+            self.__vector_b = self.__constraint_2 - self.__base
         else:
-            if mode == 'points' or 'vector' or 'normal':
-                self.__constraint_0 = vec(constraint_0)
-                self.__constraint_1 = vec(constraint_1)
-                self.__constraint_2 = vec(constraint_2)
-                self.__mode = mode
+            self.__vector_a = self.__constraint_1
+            if mode == 'vector':
+                self.__vector_b = self.__constraint_2
             else:
-                errstring = f"Unknown mode: {mode}"
-                raise ValueError(errstring)
+                # generate second plane defining vector to calculate points on plane
+                self.__vector_b = npcross(self.__constraint_2, self.__vector_a)
+        self.__normal = npcross(self.__vector_a, self.__vector_b)
+
+    def __modecheck(self, mode_var) -> object:
+        """Checks whether user input for mode is string. If yes, makes sure that it is lowercase.
+        ARGS:
+            mode_var: user input for mode selection
+        RETURNS:
+            mode_lower (str): lowercase mode selection string
+        """
+        if type(mode_var) != str:
+            raise TypeError("Expected type for mode: str")
+        mode_lower = mode_var.lower()
+        return mode_lower
+
+    def point(self, scale_a: float, scale_b: float, mode: str = "point"):
+        """Calculates a point on the plane
+        ARGS:
+           scale_a (float): scales vector a
+           scale_b (float): scalse vector b
+           mode (str): swith between returning a Point object or an ndarray, default: Point
+        RETURNS:
+            point_on_plane: Point on plane, determined by scaling defining vectors. Either Point object or ndarray
+        """
+        mode = self.__modecheck(mode)
+        if mode != 'point' and mode != 'vector':
+            raise ValueError("Mode must be either \'point\' or \'vector\'")
+        point_on_plane = self.__base + scale_a * self.__vector_b + scale_b * self.__vector_b
+        if mode == 'point':
+            return Point(point_on_plane)
+        else:
+            return point_on_plane

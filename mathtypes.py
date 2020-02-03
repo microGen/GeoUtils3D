@@ -34,19 +34,6 @@ def _modecheck_val(mode_var):
     if mode_var != 'point' and mode_var != 'vector':
         raise ValueError("Mode must be either \'point\' or \'vector\'")
 
-def _mode_return(return_var: ndarray, mode_var: str):
-    """Switches the point representation between Point object and vector.
-    ARGS:
-        return_var (ndarray): variable to be returned by calling method
-        mode_var (str): mode selector. Either 'point' or 'vector'
-    RETURNS:
-        If mode == 'point': Point object, else: ndarray
-    """
-    if mode_var == 'point':
-        return Point(return_var)
-    else:
-        return return_var
-
 class Point:
     """Point primitive"""
     #TO DO: Implement type and value checking of setters!
@@ -142,10 +129,8 @@ class Line:
                 self.__point_b = self.__point_a + self.__vector
 
     @property
-    def point_a(self, mode: str = 'point'):
-        mode = _modecheck_type(mode)
-        _modecheck_val(mode)
-        return _mode_return(self.__point_a, mode)
+    def point_a(self) -> ndarray:
+        return self.__point_a
 
     @point_a.setter
     def point_a(self, new_const):
@@ -153,10 +138,8 @@ class Line:
         self.__vector = self.__point_b - self.__point_a
 
     @property
-    def point_b(self, mode: str = 'point'):
-        mode = _modecheck_type(mode)
-        _modecheck_val(mode)
-        return _mode_return(self.__point_b, mode)
+    def point_b(self) -> ndarray:
+        return self.__point_b
 
     @point_b.setter
     def point_b(self, new_const):
@@ -164,7 +147,7 @@ class Line:
         self.__vector = self.__point_b - self.__point_a
 
     @property
-    def vector(self):
+    def vector(self) -> ndarray:
         return self.__vector
 
     @vector.setter
@@ -172,22 +155,16 @@ class Line:
         self.__vector = new_vector
         self.__point_b = self.__point_a + self.__vector
 
-
-    def point(self, scale: float, mode: str = 'point'):
+    def point(self, scale: float) -> ndarray:
         """Returns a point on the line.
         ARGS:
             scale (float): scales the direction vector of the line extending from base point
-            mode (str): 'point' or 'vector', controls return format of method
         RETURNS:
-            point_on_line: Point object if mode == 'point', ndarray if mode == 'vector'
+            point_on_line (ndarray): Point on line, determined by scaling defining vectors
         """
-        mode = _modecheck_type(mode)
-        _modecheck_val(mode)
         point_on_line = self.__point_a + scale * self.__vector
-        if mode == 'point':
-            return Point(point_on_line)
-        else:
-            return point_on_line
+        return point_on_line
+
 
 class Plane:
     "Plane primitive"
@@ -235,49 +212,36 @@ class Plane:
         self.__normal = cross(self.__vector_u, self.__vector_v)
 
     @property
-    def point_a(self, mode: str = 'point'):
-        mode = _modecheck_type(mode)
-        _modecheck_val()
-        return _mode_return(self.__point_a, mode)
+    def point_a(self) -> ndarray:
+        return self.__point_a
 
     @point_a.setter
     def point_a(self, new_const):
         self.__point_a = vec(new_const)
 
     @property
-    def point_b(self, mode: str = 'point'):
-        mode = _modecheck_type(mode)
-        _modecheck_val()
-        return _mode_return(self.__point_b, mode)
+    def point_b(self) -> ndarray:
+        return self.__point_b
 
     @point_b.setter
     def point_b(self, new_const):
         self.__point_b = vec(new_const)
 
     @property
-    def point_c(self, mode: str = 'point'):
-        mode = _modecheck_type(mode)
-        _modecheck_val()
-        return _mode_return(self.__point_c, mode)
+    def point_c(self) -> ndarray:
+        return self.__point_c
 
     @point_c.setter
     def point_c(self, new_const):
         self.__point_c = vec(new_const)
 
-    def point(self, scale_a: float, scale_b: float, mode: str = 'point'):
+    def point(self, scale_a: float, scale_b: float) -> ndarray:
         """Calculates a point on the plane
         ARGS:
            scale_a (float): scales vector a
            scale_b (float): scalse vector b
-           mode (str): swith between returning a Point object or an ndarray, default: Point
         RETURNS:
-            point_on_plane: Point on plane, determined by scaling defining vectors. Either Point object or ndarray
+            point_on_plane (ndarray): Point on plane, determined by scaling defining vectors
         """
-        mode = _modecheck_type(mode)
-        if mode != 'point' and mode != 'vector':
-            raise ValueError("Mode must be either \'point\' or \'vector\'")
         point_on_plane = self.__point_a + scale_a * self.__vector_v + scale_b * self.__vector_v
-        if mode == 'point':
-            return Point(point_on_plane)
-        else:
-            return point_on_plane
+        return point_on_plane

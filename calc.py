@@ -1,6 +1,6 @@
 """Utility functions for 3D geometry operations.
 
-Copyright (c) 2019 N.Wichmann
+Copyright (c) 2020 N.Wichmann
 
 Licensed under the Mozilla Public License 2.0
 (see attached License.txt or https://www.mozilla.org/en-US/MPL/2.0/)

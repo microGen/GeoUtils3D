@@ -1,3 +1,11 @@
+"""Packet setup.
+
+Copyright (c) 2020 N.Wichmann
+
+Licensed under the Mozilla Public License 2.0
+(see attached License.txt or https://www.mozilla.org/en-US/MPL/2.0/)
+"""
+
 import setuptools
 
 with open("README.md", "r") as readme:

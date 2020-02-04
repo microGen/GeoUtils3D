@@ -1,6 +1,6 @@
 """Types for 3D geometry operations.
 
-Copyright (c) 2019 N.Wichmann
+Copyright (c) 2020 N.Wichmann
 
 Licensed under the Mozilla Public License 2.0
 (see attached License.txt or https://www.mozilla.org/en-US/MPL/2.0/)
@@ -9,63 +9,30 @@ Licensed under the Mozilla Public License 2.0
 from numpy import array
 from numpy import ndarray
 from numpy import cross
-
-# conversion between vector and point representation
-vec = lambda constr: constr if type(constr) == ndarray else constr.coords
-pt = lambda constr: constr if type(constr) == Point else Point(constr)
-
-def _modecheck_type(mode_var) -> str:
-    """Checks whether user input for mode is string. If yes, makes sure that it is lowercase.
-    ARGS:
-        mode_var: user input for mode selection
-    RETURNS:
-        mode_lower (str): lowercase mode selection string
-    """
-    if type(mode_var) != str:
-        raise TypeError("Expected type for mode: str")
-    mode_lower = mode_var.lower()
-    return mode_lower
-
-def _modecheck_val(mode_var):
-    """Checks whether user input for mode is 'point' or 'vector'. If not, raises ValueError.
-    ARGS:
-        mode_var: user input for mode selection
-    """
-    if mode_var != 'point' and mode_var != 'vector':
-        raise ValueError("Mode must be either \'point\' or \'vector\'")
-
-def _argcheck_dim(*args):
-    """Checks whether all arguments are of same dimension. If not, raises ValueError."""
-    arg_len = [len(vec(arg)) for arg in args]
-    if min(arg_len) < max(arg_len):
-        raise ValueError("Mismatch in argument dimensions!")
+import utility
 
 class Point:
     """Point primitive"""
-    #TO DO: Implement type and value checking of setters!
 
     def __init__(self, *coords):
-        """Creates point in 2D or 3D space.
+        """Creates point in 3D space.
         ARGS:
-            coords: ndarray of 2 or 3 elements
-                    or 2 or 3 float arguments
+            coords: ndarray of 3 elements
+                    or 3 float arguments
         """
         if len(coords) == 1 and type(coords[0]) == ndarray:
-            if 2 <= len(coords[0]) <= 3:
+            if len(coords[0]) == 3:
                 self.__coords = coords[0]
             else:
-                raise ValueError("Point currently only works in 2D and 3D space.")
-        elif 1 < len(coords) <= 3:
+                raise ValueError("Point only works in 3D space.")
+        elif len(coords) == 3:
             self.__coords = array(coords)
         else:
-            raise TypeError("Point constructor takes either one ndarray or 2 or 3 floats as arguments.")
+            raise TypeError("Point constructor takes either one ndarray or 3 floats as arguments.")
 
         self.__x = self.__coords[0]
         self.__y = self.__coords[1]
-        if len(coords) == 3:
-            self.__z = self.__coords[2]
-        else:
-            self.__z = None
+        self.__z = self.__coords[2]
 
     @property
     def x(self) -> float:
@@ -116,21 +83,21 @@ class Line:
                 or ndarray representing vector parallel to line
             mode (str): 'point' for defining line with two points or 'vector' for point and vector form
         """
-        mode = _modecheck_type(mode)
+        mode = utility.modecheck_type(mode)
         if type(constraint_0) != Point and type(constraint_0) != ndarray:
             raise TypeError("Argument \'constraint_0\' takes Point object or ndarray.")
-        _argcheck_dim(constraint_0, constraint_1)
+        utility.argcheck_dim(3, constraint_0, constraint_1)
 
-        self.__point_a = vec(constraint_0)
+        self.__point_a = utility.vec(constraint_0)
         if mode == 'point':
             if type(constraint_1) != Point and type(constraint_1) != ndarray:
                 raise TypeError("Argument \'constraint_1\' takes Point object or ndarray in mode \'point\'.")
-            self.__point_b = vec(constraint_1)
+            self.__point_b = utility.vec(constraint_1)
             self.__vector = self.__point_b - self.__point_a
         elif mode == 'vector':
             if type(constraint_1) != ndarray:
                 raise TypeError("Argument \'constraint_1\' takes ndarray in mode \'vector\'.")
-            self.__vector = vec(constraint_1)
+            self.__vector = utility.vec(constraint_1)
             self.__point_b = self.__point_a + self.__vector
         else:
             e_str = f"Line parameter \'mode\' takes either \'point\' or \'vector\' as argument. Unknown argument {mode}"
@@ -142,7 +109,7 @@ class Line:
 
     @point_a.setter
     def point_a(self, new_const):
-        self.__point_a = vec(new_const)
+        self.__point_a = utility.vec(new_const)
         self.__vector = self.__point_b - self.__point_a
 
     @property
@@ -151,7 +118,7 @@ class Line:
 
     @point_b.setter
     def point_b(self, new_const):
-        self.__point_b = vec(new_const)
+        self.__point_b = utility.vec(new_const)
         self.__vector = self.__point_b - self.__point_a
 
     @property
@@ -194,20 +161,20 @@ class Plane:
                 or ndarray representing vector normal to plane
             mode (str): "point", "vector", "normal" for plane representation
         """
-        mode = _modecheck_type(mode)
+        mode = utility.modecheck_type(mode)
         if type(constraint_0) != Point and type(constraint_0) != ndarray:
             raise TypeError("Argument \'constraint_0\' takes Point object or ndarray.")
-        _argcheck_dim(constraint_0, constraint_1, constraint_2)
+        utility.argcheck_dim(3, constraint_0, constraint_1, constraint_2)
 
-        self.__point_a = vec(constraint_0)
+        self.__point_a = utility.vec(constraint_0)
         if mode == 'point':
             if type(constraint_1) != Point and type(constraint_1) != ndarray:
                 raise TypeError("Argument \'constraint_1\' takes Point object or ndarray in mode \'point\'.")
             if type(constraint_2) != Point and type(constraint_2) != ndarray:
                 raise TypeError("Argument \'constraint_2\' takes Point object or ndarray in mode \'point\'.")
 
-            self.__point_b = vec(constraint_1)
-            self.__point_c = vec(constraint_2)
+            self.__point_b = utility.vec(constraint_1)
+            self.__point_c = utility.vec(constraint_2)
             self.__vector_u = self.__point_b - self.__point_a
             self.__vector_v = self.__point_c - self.__point_a
         else:
@@ -216,10 +183,10 @@ class Plane:
             if type(constraint_2) != ndarray:
                 raise TypeError(f"Argument \'constraint_2\' takes ndarray in mode \'{mode}\'.")
 
-            self.__vector_u = vec(constraint_1)
+            self.__vector_u = utility.vec(constraint_1)
             self.__point_b = self.__point_a + self.__vector_u
             if mode == 'vector':
-                self.__vector_v = vec(constraint_2)
+                self.__vector_v = utility.vec(constraint_2)
             elif mode == 'normal':
                 # generate second plane defining vector to calculate points on plane
                 self.__vector_v = cross(self.__point_c, self.__vector_u)
@@ -236,7 +203,7 @@ class Plane:
 
     @point_a.setter
     def point_a(self, new_const):
-        self.__point_a = vec(new_const)
+        self.__point_a = utility.vec(new_const)
 
     @property
     def point_b(self) -> ndarray:
@@ -244,7 +211,7 @@ class Plane:
 
     @point_b.setter
     def point_b(self, new_const):
-        self.__point_b = vec(new_const)
+        self.__point_b = utility.vec(new_const)
 
     @property
     def point_c(self) -> ndarray:
@@ -252,7 +219,7 @@ class Plane:
 
     @point_c.setter
     def point_c(self, new_const):
-        self.__point_c = vec(new_const)
+        self.__point_c = utility.vec(new_const)
 
     @property
     def normal(self) -> ndarray:

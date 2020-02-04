@@ -9,13 +9,20 @@ Licensed under the Mozilla Public License 2.0
 import numpy as np
 from collections import namedtuple
 
+from mathtypes import Point
+from mathtypes import Line
+from mathtypes import Plane
+
+'''
 Point = namedtuple('Point', ['x', 'y', 'z'])
 PointUV = namedtuple('PointUV', ['u', 'v'])
 Line = namedtuple('Line', ['Point_0', 'Point_1'])
 LineUV = namedtuple('LineUV', ['PointUV_0', 'PointUV_1'])
 Plane = namedtuple('Face', ['Point_0', 'Point_1', 'Point_2'])
 PlaneUV = namedtuple('PlaneUV', ['PointUV_0', 'PointUV_1', 'PointUV_2'])
+'''
 
+#obsolete?
 def calculate_normal(plane: Plane) -> np.ndarray:
     """Calculates normal of a face defined by 3 points in 3D space.
     ARGS:
@@ -34,11 +41,10 @@ def dist_point_point(point_0: Point, point_1: Point) -> float:
     RETURNS:
         dist (float): scalar distance between both points
     """
-    p0 = np.array(point_0)
-    p1 = np.array(point_1)
-    vector = p1 - p0
+    vector = point_1.coords - point_0.coords
     dist = np.linalg.norm(vector)
     return dist
+
 
 def dist_point_line(point: Point, line: Line) -> float:
     """Calculates the distance between a point and a line in 3D space.
@@ -48,12 +54,13 @@ def dist_point_line(point: Point, line: Line) -> float:
     RETURNS:
         dist(float): scalar minimum distance between point and line
     """
-    p = np.array(point)
-    l0, l1 = [np.array(li) for li in line]
-    l_vector = l1 - l0
-    num = np.linalg.norm(np.cross(l_vector, (p-l0)))
-    dist = num / np.linalg.norm(l_vector)
+    p = point.coords
+    l_a = line.point_a
+    l_vec = line.vector
+    num = np.linalg.norm(np.cross(l_vec, (p - l_a)))
+    dist = num / np.linalg.norm(l_vec)
     return dist
+
 
 def dist_point_plane(point: Point, plane: Plane) -> float:
     """Calculates the distance of a point to a plane in 3D space.
@@ -63,28 +70,33 @@ def dist_point_plane(point: Point, plane: Plane) -> float:
     RETURNS:
         dist(float): scalar minimum distance between point and line
     """
-    p = np.array(point)
-    pl0, pl1, pl2 = [np.array(pli) for pli in plane]
-    normal = np.array(calculate_normal(plane))
-    num = np.linalg.norm(np.dot(normal, (np.subtract(p, pl0))))
-    dist = num / np.linalg.norm(normal)
+    p = point.coords
+    pl_a = plane.point_a
+    pl_norm = plane.normal
+    num = np.linalg.norm(np.dot(pl_norm, (p - pl_a)))
+    dist = num / np.linalg.norm(pl_norm)
     return dist
 
-def intersection_line_plane(line: Line, plane: Plane) -> Point:
+
+def intersection_line_plane(line: Line, plane: Plane) -> np.ndarray:
     """Calculates the intersection point between a line and a plane in 3D space.
     ARGS:
         line (Line): Line in 3D space defined by 2 points
         plane (Plane): Plane in 3D space defined by 3 points
     RETURNS:
-        intersection_point (Point): intersection of both lines
+        intersection_point (ndarray): intersection point of line and plane
     """
-    line_vector = np.array(line[1]) - np.array(line[0])
-    normal = calculate_normal(plane)
-    num = np.dot(normal, (np.array(plane[0]) - np.array(line[0])))
-    den = np.dot(normal, line_vector)
-    intersection_point = Point(*(np.array(line[0]) + np.dot(num/den, line_vector)))
-    return intersection_point
+    l_a = line.point_a
+    l_vec = line.vector
+    pl_a = plane.point_a
+    pl_norm = plane.normal
+    num = np.dot(pl_norm, (pl_a - l_a))
+    den = np.dot(pl_norm, l_vec)
+    intersection = l_a + np.dot(num/den, l_vec)
+    return intersection
 
+# under construction
+'''
 def map_xyz_to_uv(origin: Point, u_axis: np.ndarray, normal: np.ndarray, point: Point) -> PointUV:
     """Map coordinates of a point in 3D space to local UV coordinates.
     ARGS:
@@ -107,6 +119,7 @@ def map_xyz_to_uv(origin: Point, u_axis: np.ndarray, normal: np.ndarray, point: 
     uv_system = np.stack((u_axis, v_axis))
     uv_coords = PointUV(*np.dot(uv_system, p))
     return uv_coords
+
 
 def point_in_triangle(face_uv: PlaneUV, point_uv: PointUV) -> bool:
     """Calculates whether point is within bounds of given triangular face in 2D space.
@@ -139,3 +152,4 @@ def project_vector(vector_0: np.array, vector_1: np.array) -> np.array:
     den = np.dot(vector_1, vector_1)
     projection = num / den * vector_1
     return projection
+'''

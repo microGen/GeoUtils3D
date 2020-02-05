@@ -12,13 +12,17 @@ from mathtypes import Plane
 
 
 class Vertex(Point):
+    _dimension = 3
     pass
 
 class Edge(Line):
+    _dimension = 3
     pass
 
 class Face(Plane):
     # can be defined with points and edges
     # edges have to share vertices with next/previous edges
     # edges connect counter-clockwise
+    # use edges to find neighboring face
+    _dimension = 3
     pass

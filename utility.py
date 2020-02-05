@@ -41,3 +41,7 @@ def argcheck_dim(dim: int, *args):
     arg_len = [len(vec(arg)) for arg in args]
     if min(arg_len) < dim < max(arg_len):
         raise ValueError("Mismatch in argument dimensions!")
+    elif dim != min(arg_len):
+        raise ValueError(f"Expected Argument of {dim} dimensions, got {min(arg_len)}")
+    else:
+        return

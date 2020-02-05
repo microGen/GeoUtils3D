@@ -7,20 +7,14 @@ Licensed under the Mozilla Public License 2.0
 """
 
 import numpy as np
-from collections import namedtuple
+import utility
 
 from mathtypes import Point
 from mathtypes import Line
 from mathtypes import Plane
 
-'''
-Point = namedtuple('Point', ['x', 'y', 'z'])
-PointUV = namedtuple('PointUV', ['u', 'v'])
-Line = namedtuple('Line', ['Point_0', 'Point_1'])
-LineUV = namedtuple('LineUV', ['PointUV_0', 'PointUV_1'])
-Plane = namedtuple('Face', ['Point_0', 'Point_1', 'Point_2'])
-PlaneUV = namedtuple('PlaneUV', ['PointUV_0', 'PointUV_1', 'PointUV_2'])
-'''
+from uvtypes import UVPoint
+from uvtypes import UVLine
 
 #obsolete?
 def calculate_normal(plane: Plane) -> np.ndarray:
@@ -95,33 +89,48 @@ def intersection_line_plane(line: Line, plane: Plane) -> np.ndarray:
     intersection = l_a + np.dot(num/den, l_vec)
     return intersection
 
-# under construction
-'''
-def map_xyz_to_uv(origin: Point, u_axis: np.ndarray, normal: np.ndarray, point: Point) -> PointUV:
+def project_vector(vector_0: np.array, vector_1: np.array) -> np.array:
+    """Projects vector_0 onto vector_1 and returns the resulting vector.
+    ARGS:
+        vector_0, vector_1 (np.array): vectors in 3D space
+    RETURNS:
+        projection (np.array): projected vector in 3D space
+    """
+    num = np.dot(vector_1, vector_0)
+    den = np.dot(vector_1, vector_1)
+    projection = num / den * vector_1
+    return projection
+
+def map_xyz_to_uv(origin, u_axis: np.ndarray, normal: np.ndarray, point, norm: bool = True) -> UVPoint:
     """Map coordinates of a point in 3D space to local UV coordinates.
     ARGS:
-        origin (Point): origin of local coordinate system
+        origin: Origin of local coordinate system. Either Point object or vector.
         u_axis (np.ndarray): vector defining local U axis
         normal (np.ndarray): normal pointing out of UV plane
             i.e. the plane in 3D space on which the UV coordinate system resides
-        point (Point): Point to be translated to UV projection
+        point: Point to be translated to UV projection. Either Point object or vector.
+        norm (bool): normalize UV coordinate system (default: True) or use U vector to scale UV system.
     RETURNS:
-        uv_coords (PointUV): UV coordinates of point
+        uv_coords (UVPoint): UVPoint object on UV plane.
     """
-    origin = np.array(origin)
-    p = np.array(point)
+    origin = utility.vec(origin)
+    point = utility.vec(point)
+    utility.argcheck_dim(3, origin, u_axis, normal, point)
 
-    p = p - origin
+    point = point - origin
     v_axis = np.cross(u_axis, -normal)
-    #normalize coordinate system
-    u_axis = u_axis / np.linalg.norm(u_axis)
-    v_axis = v_axis / np.linalg.norm(v_axis)
+    if norm:
+        #normalize coordinate system
+        u_axis = u_axis / np.linalg.norm(u_axis)
+        v_axis = v_axis / np.linalg.norm(v_axis)
     uv_system = np.stack((u_axis, v_axis))
-    uv_coords = PointUV(*np.dot(uv_system, p))
+    uv_coords = UVPoint(*np.dot(uv_system, point))
     return uv_coords
 
-
-def point_in_triangle(face_uv: PlaneUV, point_uv: PointUV) -> bool:
+# under construction
+# needs implementation of Face class first
+'''
+def point_in_triangle(face_uv: Face, point_uv: PointUV) -> bool:
     """Calculates whether point is within bounds of given triangular face in 2D space.
     ARGS:
         face_uv (PlaneUV): triangle in UV space defined by 3 points
@@ -140,16 +149,4 @@ def point_in_triangle(face_uv: PlaneUV, point_uv: PointUV) -> bool:
     in_bounds = alignment(p_uv, face_uv[0], edges[1]) and alignment(p_uv, face_uv[1], edges[2]) and\
         alignment(p_uv, face_uv[2], edges[0])
     return in_bounds
-
-def project_vector(vector_0: np.array, vector_1: np.array) -> np.array:
-    """Projects vector_0 onto vector_1 and returns the resulting vector.
-    ARGS:
-        vector_0, vector_1 (np.array): vectors in 3D space
-    RETURNS:
-        projection (np.array): projected vector in 3D space
-    """
-    num = np.dot(vector_1, vector_0)
-    den = np.dot(vector_1, vector_1)
-    projection = num / den * vector_1
-    return projection
 '''

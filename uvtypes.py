@@ -9,7 +9,7 @@ Licensed under the Mozilla Public License 2.0
 from numpy import array
 from numpy import ndarray
 import utility
-from mathtypes import Line
+from mathtypes import Line as __Line
 
 
 class UVPoint:
@@ -62,7 +62,8 @@ class UVPoint:
         utility.argcheck_dim(self._dimension, new_coords)
         self.__coords = new_coords
 
-class UVLine(Line):
+class UVLine(__Line):
     """Line primitive in UV space"""
     _dimension = 2
-    _const_type = UVPoint
+    _argtypes_point = [ndarray, UVPoint]
+    _argtypes_vector = [ndarray]

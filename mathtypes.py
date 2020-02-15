@@ -214,6 +214,12 @@ class Plane:
             self.__point_c = self.__point_a + self.__vector_v
         self.__normal = cross(self.__vector_u, self.__vector_v)
 
+    def __recalc_normal(self):
+        """Recalculates the normal after point update."""
+        self.__vector_u = self.__point_b - self.__point_a
+        self.__vector_v = self.__point_c - self.__point_a
+        self.__normal = cross(self.__vector_u, self.__vector_v)
+
     @property
     def point_a(self) -> ndarray:
         return self.__point_a
@@ -223,6 +229,7 @@ class Plane:
         utility.argcheck_type(self._argtypes_point, new_const)
         utility.argcheck_dim(self._dimension, new_const)
         self.__point_a = utility.vec(new_const)
+        self.__recalc_normal()
 
     @property
     def point_b(self) -> ndarray:
@@ -233,6 +240,7 @@ class Plane:
         utility.argcheck_type(self._argtypes_point, new_const)
         utility.argcheck_dim(self._dimension, new_const)
         self.__point_b = utility.vec(new_const)
+        self.__recalc_normal()
 
     @property
     def point_c(self) -> ndarray:
@@ -243,6 +251,7 @@ class Plane:
         utility.argcheck_type(self._argtypes_point, new_const)
         utility.argcheck_dim(self._dimension, new_const)
         self.__point_c = utility.vec(new_const)
+        self.__recalc_normal()
 
     @property
     def normal(self) -> ndarray:

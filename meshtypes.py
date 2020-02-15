@@ -13,7 +13,6 @@ from functools import reduce
 
 import utility
 import mathtypes
-import calc
 
 
 class Vertex(mathtypes.Point):
@@ -87,6 +86,7 @@ class Face:
     # use edges to find neighboring face
     _dimension = 3
     _argtypes_vert = [ndarray, Vertex]
+    _argtypes_edge = [Edge]
 
     def __init__(self, element_0, element_1, element_2 = None):
         sigma = 1e-8
@@ -126,18 +126,127 @@ class Face:
                 self.__vertex_b = arg_edge.vertex_a
                 self.__vertex_c = arg_edge.vertex_b
         utility.argcheck_dim(self._dimension, self.__vertex_a, self.__vertex_b, self.__vertex_c)
-        self.__element_order()
 
-    def __element_order(self):
-        """(Re)Calculates the element order in Face. Order is mathematically positive (ccw)."""
-        u_vector = self.__vertex_b.coords - self.__vertex_a.coords
-        v_plane = self.__vertex_c.coords - self.__vertex_a.coords
-        n_vector = cross(u_vector, v_plane)
-        uva = calc.map_xyz_to_uv(self.__vertex_a, u_vector, n_vector, self.__vertex_a)
-        uvb = calc.map_xyz_to_uv(self.__vertex_a, u_vector, n_vector, self.__vertex_b)
-        uvc = calc.map_xyz_to_uv(self.__vertex_a, u_vector, n_vector, self.__vertex_c)
-        ab_vector = uvb.coords - uva.coords
-        ac_vector = uvc.coords - uva.coords
-        # if Edge AB is left of Edge AC: switch Vectors B and C
-        if cross(ab_vector, ac_vector) < 0:
-            self.__vertex_b, self.__vertex_c = self.__vertex_c, self.__vertex_b
+        self.__edge_a = Edge(self.__vertex_a, self.__vertex_b)
+        self.__edge_b = Edge(self.__vertex_b, self.__vertex_c)
+        self.__edge_c = Edge(self.__vertex_c, self.__vertex_a)
+
+        self.__vector_u = self.__vertex_b.coords - self.__vertex_a.coords
+        self.__vector_v = self.__vertex_c.coords - self.__vertex_a.coords
+        self.__normal = cross(self.__vector_u, self.__vector_v)
+
+    def __recalc_edges(self):
+        """(Re)Calculates the edges in Face."""
+        self.__edge_a = Edge(self.__vertex_a, self.__vertex_b)
+        self.__edge_b = Edge(self.__vertex_b, self.__vertex_c)
+        self.__edge_c = Edge(self.__vertex_c, self.__vertex_a)
+
+    def __recalc_vertices(self, edge_id):
+        """(Re)Calculates vertices in Face."""
+        if edge_id == 'a':
+            self.__vertex_a = self.__edge_a.vertex_a
+            self.__vertex_b = self.__edge_a.vertex_b
+            self.__vertex_c = self.__edge_c.vertex_a
+        elif edge_id == 'b':
+            self.__vertex_a = self.__edge_a.vertex_a
+            self.__vertex_b = self.__edge_b.vertex_a
+            self.__vertex_c = self.__edge_b.vertex_b
+        elif edge_id == 'c':
+            self.__vertex_a = self.__edge_c.vertex_b
+            self.__vertex_b = self.__edge_b.vertex_a
+            self.__vertex_c = self.__edge_c.vertex_a
+        else:
+            raise ValueError(f"No edge {edge_id} in Face")
+
+
+    def __recalc_normal(self):
+        """(Re)Calculates normal of Face"""
+        self.__vector_u = self.__vertex_b.coords - self.__vertex_a.coords
+        self.__vector_v = self.__vertex_c.coords - self.__vertex_a.coords
+        self.__normal = cross(self.__vector_u, self.__vector_v)
+
+    def flip(self):
+        """Flips Face along normal."""
+        self.__vertex_b, self.__vertex_c = self.__vertex_c, self.__vertex_b
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def vertex_a(self):
+        return self.__vertex_a
+
+    @vertex_a.setter
+    def vertex_a(self, new_vert):
+        utility.argcheck_type(self._argtypes_vert, new_vert)
+        utility.argcheck_dim(self._dimension, new_vert)
+        self.__vertex_a = new_vert
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def vertex_b(self):
+        return self.__vertex_b
+
+    @vertex_b.setter
+    def vertex_b(self, new_vert):
+        utility.argcheck_type(self._argtypes_vert, new_vert)
+        utility.argcheck_dim(self._dimension, new_vert)
+        self.__vertex_b = new_vert
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def vertex_c(self):
+        return self.__vertex_c
+
+    @vertex_c.setter
+    def vertex_c(self, new_vert):
+        utility.argcheck_type(self._argtypes_vert, new_vert)
+        utility.argcheck_dim(self._dimension, new_vert)
+        self.__vertex_c = new_vert
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def edge_a(self):
+        return self.__edge_a
+
+    @edge_a.setter
+    def edge_a(self, new_edge):
+        utility.argcheck_type(self._argtypes_edge, new_edge)
+        self.__edge_a = new_edge
+        self.__recalc_vertices()
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def edge_b(self):
+        return self.__edge_b
+
+    @edge_b.setter
+    def edge_b(self, new_edge):
+        utility.argcheck_type(self._argtypes_edge, new_edge)
+        self.__edge_b = new_edge
+        self.__recalc_vertices()
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def edge_c(self):
+        return self.__edge_c
+
+    @edge_c.setter
+    def edge_c(self, new_edge):
+        utility.argcheck_type(self._argtypes_edge, new_edge)
+        self.__edge_c = new_edge
+        self.__recalc_vertices()
+        self.__recalc_edges()
+        self.__recalc_normal()
+
+    @property
+    def normal(self):
+        return self.__normal
+
+    @property
+    def centerpoint(self):
+        pass

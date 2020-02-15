@@ -8,14 +8,15 @@ Licensed under the Mozilla Public License 2.0
 
 from numpy import array
 from numpy import ndarray
+from numpy import cross
+from functools import reduce
 
 import utility
-from mathtypes import Point as __Point
-#from mathtypes import Line as __Line
-from mathtypes import Plane as __Plane
+import mathtypes
+import calc
 
 
-class Vertex(__Point):
+class Vertex(mathtypes.Point):
     """Vertex primitive in 3D space"""
     _dimension = 3
 
@@ -78,7 +79,7 @@ class Edge:
         return point_on_edge
 
 
-class Face(__Plane):
+class Face:
     """Face primitive in 3D space"""
     # can be defined with points and edges
     # edges have to share vertices with next/previous edges
@@ -88,18 +89,55 @@ class Face(__Plane):
     _argtypes_vert = [ndarray, Vertex]
 
     def __init__(self, element_0, element_1, element_2 = None):
+        sigma = 1e-8
+        c_in_tol = lambda coord, tolerance: abs(coord) <= tolerance
+        tol_comp = lambda c0, c1: c0 and c1
+
+        # Accounting for all initialization modes
         if element_2 is not None:
             # Vertex initialization mode
             utility.argcheck_type(self._argtypes_vert, element_0)
             utility.argcheck_type(self._argtypes_vert, element_1)
             utility.argcheck_type(self._argtypes_vert, element_2)
+            self.__vertex_a = element_0
+            self.__vertex_b = element_1
+            self.__vertex_c = element_2
         else:
             if type(element_0) == Edge and type(element_1) == Edge:
                 # Two Edge initialization mode
-                pass
+                v0a = element_0.vertex_a
+                v0b = element_0.vertex_b
+                v1a = element_1.vertex_a
+                v1b = element_1.vertex_b
+                if reduce(tol_comp, c_in_tol(v0a.coords - v1a.coords, sigma)) or reduce(tol_comp, c_in_tol(v0a.coords - v1b.coords, sigma)):
+                    self.__vertex_a = v0b
+                elif reduce(tol_comp, c_in_tol(v0b.coords - v1a.coords, sigma)) or reduce(tol_comp, c_in_tol(v0b.coords - v1b.coords, sigma)):
+                    self.__vertex_a = v0a
+                else:
+                    raise ValueError("Passed Edge objects do not share at least 1 Vertex.")
+                self.__vertex_b = v1a
+                self.__vertex_c = v1b
             else:
-                # Vertex and Edge initialization mode. End vertices of edge must be distinct from passed vertex.
+                # Vertex and Edge initialization mode
                 args = [element_0, element_1]
+                self.__vertex_a = next(filter(lambda a: type(a) != Edge, args))
+                utility.argcheck_type(self._argtypes_vert, self.__vertex_a)
                 arg_edge = next(filter(lambda a: type(a) == Edge, args))
-                arg_vert = next(filter(lambda a: type(a) != Edge, args))
-                utility.argcheck_type(self._argtypes_vert, arg_vert)
+                self.__vertex_b = arg_edge.vertex_a
+                self.__vertex_c = arg_edge.vertex_b
+        utility.argcheck_dim(self._dimension, self.__vertex_a, self.__vertex_b, self.__vertex_c)
+        self.__element_order()
+
+    def __element_order(self):
+        """(Re)Calculates the element order in Face. Order is mathematically positive (ccw)."""
+        u_vector = self.__vertex_b.coords - self.__vertex_a.coords
+        v_plane = self.__vertex_c.coords - self.__vertex_a.coords
+        n_vector = cross(u_vector, v_plane)
+        uva = calc.map_xyz_to_uv(self.__vertex_a, u_vector, n_vector, self.__vertex_a)
+        uvb = calc.map_xyz_to_uv(self.__vertex_a, u_vector, n_vector, self.__vertex_b)
+        uvc = calc.map_xyz_to_uv(self.__vertex_a, u_vector, n_vector, self.__vertex_c)
+        ab_vector = uvb.coords - uva.coords
+        ac_vector = uvc.coords - uva.coords
+        # if Edge AB is left of Edge AC: switch Vectors B and C
+        if cross(ab_vector, ac_vector) < 0:
+            self.__vertex_b, self.__vertex_c = self.__vertex_c, self.__vertex_b

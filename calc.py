@@ -39,7 +39,6 @@ def dist_point_point(point_0: Point, point_1: Point) -> float:
     dist = np.linalg.norm(vector)
     return dist
 
-
 def dist_point_line(point: Point, line: Line) -> float:
     """Calculates the distance between a point and a line in 3D space.
     ARGS:
@@ -55,7 +54,6 @@ def dist_point_line(point: Point, line: Line) -> float:
     dist = num / np.linalg.norm(l_vec)
     return dist
 
-
 def dist_point_plane(point: Point, plane: Plane) -> float:
     """Calculates the distance of a point to a plane in 3D space.
     ARGS:
@@ -70,7 +68,6 @@ def dist_point_plane(point: Point, plane: Plane) -> float:
     num = np.linalg.norm(np.dot(pl_norm, (p - pl_a)))
     dist = num / np.linalg.norm(pl_norm)
     return dist
-
 
 def intersection_line_plane(line: Line, plane: Plane) -> np.ndarray:
     """Calculates the intersection point between a line and a plane in 3D space.
@@ -126,6 +123,9 @@ def map_xyz_to_uv(origin, u_axis: np.ndarray, normal: np.ndarray, point, norm: b
     uv_system = np.stack((u_axis, v_axis))
     uv_coords = UVPoint(*np.dot(uv_system, point))
     return uv_coords
+
+def left_of(uv_vector_0: np.ndarray, uv_vector_1: np.ndarray) -> bool:
+    pass
 
 # under construction
 # needs implementation of Face class first

@@ -183,7 +183,7 @@ class Plane:
             mode (str): "point", "vector", "normal" for plane representation
         """
         utility.argcheck_dim(self._dimension, constraint_0, constraint_1, constraint_2)
-        utility.argcheck_type( self._argtypes_point, constraint_0)
+        utility.argcheck_type(self._argtypes_point, constraint_0)
         mode = utility.modecheck_type(mode)
 
 

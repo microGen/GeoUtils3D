@@ -15,6 +15,11 @@ from mathtypes import Plane
 
 from uvtypes import UVPoint
 from uvtypes import UVLine
+from uvtypes import UVTriangle
+
+from meshtypes import Vertex
+from meshtypes import Edge
+from meshtypes import Face
 
 #obsolete?
 def calculate_normal(plane: Plane) -> np.ndarray:
@@ -98,7 +103,7 @@ def project_vector(vector_0: np.array, vector_1: np.array) -> np.array:
     projection = num / den * vector_1
     return projection
 
-def map_xyz_to_uv(origin, u_axis: np.ndarray, normal: np.ndarray, point, norm: bool = True) -> UVPoint:
+def map_xyz_to_uv(origin, u_axis: np.ndarray, normal: np.ndarray, point, norm: bool = True) -> np.ndarray:
     """Map coordinates of a point in 3D space to local UV coordinates.
     ARGS:
         origin: Origin of local coordinate system. Either Point object or vector.
@@ -121,32 +126,28 @@ def map_xyz_to_uv(origin, u_axis: np.ndarray, normal: np.ndarray, point, norm: b
         u_axis = u_axis / np.linalg.norm(u_axis)
         v_axis = v_axis / np.linalg.norm(v_axis)
     uv_system = np.stack((u_axis, v_axis))
-    uv_coords = UVPoint(*np.dot(uv_system, point))
+    uv_coords = np.dot(uv_system, point)
     return uv_coords
 
 def left_of(uv_vector_0: np.ndarray, uv_vector_1: np.ndarray) -> bool:
     pass
 
-# under construction
-# needs implementation of Face class first
-'''
-def point_in_triangle(face_uv: Face, point_uv: PointUV) -> bool:
+def point_in_triangle(tri_uv: UVTriangle, point_uv: UVPoint) -> bool:
     """Calculates whether point is within bounds of given triangular face in 2D space.
     ARGS:
-        face_uv (PlaneUV): triangle in UV space defined by 3 points
-        point_uv (PlaneUV): point in UV space
+        face_uv (UVTriangle): triangle in UV space defined by 3 points
+        point_uv (UVPoint): point in UV space
     RETURNS:
         in_bounds (bool): True if point is in triangle, False if not
     """
     #check whether point is on the same side of an edge as the third vertex of the triangle
-    alignment = lambda p0, p1, line: np.dot(np.cross(line[1] - line[0], p0 - line[0]),\
-                                      np.cross(line[1] - line[0], p1 - line[0])) >= 0
-    p_uv = np.array(point_uv)
+    alignment = lambda p0, p1, line: np.dot(np.cross(line.point_b.coords - line.point_a.coords, p0.coords - line.point_a.coords),\
+                                      np.cross(line.point_b.coords - line.point_a.coords, p1.coords - line.point_a.coords)) >= 0
+
     #create edges from vertices
     edges = []
     for i in range(3):
         edges.append(np.array([face_uv[i%3], face_uv[(i+1)%3]]))
-    in_bounds = alignment(p_uv, face_uv[0], edges[1]) and alignment(p_uv, face_uv[1], edges[2]) and\
-        alignment(p_uv, face_uv[2], edges[0])
+    in_bounds = alignment(point_uv.coords, face_uv[0], edges[1]) and alignment(point_uv.coords, face_uv[1], edges[2]) and\
+        alignment(point_uv.coords, face_uv[2], edges[0])
     return in_bounds
-'''

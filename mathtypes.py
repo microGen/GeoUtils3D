@@ -261,7 +261,7 @@ class Plane:
         """Calculates a point on the plane
         ARGS:
            scale_a (float): scales vector a
-           scale_b (float): scalse vector b
+           scale_b (float): scales vector b
         RETURNS:
             point_on_plane (ndarray): Point on plane, determined by scaling defining vectors
         """

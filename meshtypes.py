@@ -46,7 +46,7 @@ class Edge:
     def vertex_a(self, new_vert):
         utility.argcheck_type(self._argtypes_vert, new_vert)
         utility.argcheck_dim(self._dimension, new_vert)
-        self.__vertex_a = new_vert
+        self.__vertex_a = utility.vec(new_vert)
         self.__vector = self.__vertex_b - self.__vertex_a
 
     @property
@@ -57,7 +57,7 @@ class Edge:
     def vertex_b(self, new_vert):
         utility.argcheck_type(self._argtypes_vert, new_vert)
         utility.argcheck_dim(self._dimension, new_vert)
-        self.__vertex_b = new_vert
+        self.__vertex_b = utility.vec(new_vert)
         self.__vector = self.__vertex_b - self.__vertex_a
 
     @property
@@ -99,19 +99,19 @@ class Face:
             utility.argcheck_type(self._argtypes_vert, element_0)
             utility.argcheck_type(self._argtypes_vert, element_1)
             utility.argcheck_type(self._argtypes_vert, element_2)
-            self.__vertex_a = element_0
-            self.__vertex_b = element_1
-            self.__vertex_c = element_2
+            self.__vertex_a = utility.vec(element_0)
+            self.__vertex_b = utility.vec(element_1)
+            self.__vertex_c = utility.vec(element_2)
         else:
-            if type(element_0) == Edge and type(element_1) == Edge:
+            if type(element_0) == self._argtypes_edge[0] and type(element_1) == self._argtypes_edge[0]:
                 # Two Edge initialization mode
-                v0a = element_0.vertex_a
-                v0b = element_0.vertex_b
-                v1a = element_1.vertex_a
-                v1b = element_1.vertex_b
-                if reduce(tol_comp, c_in_tol(v0a.coords - v1a.coords, sigma)) or reduce(tol_comp, c_in_tol(v0a.coords - v1b.coords, sigma)):
+                v0a = utility.vec(element_0.vertex_a)
+                v0b = utility.vec(element_0.vertex_b)
+                v1a = utility.vec(element_1.vertex_a)
+                v1b = utility.vec(element_1.vertex_b)
+                if reduce(tol_comp, c_in_tol(v0a - v1a, sigma)) or reduce(tol_comp, c_in_tol(v0a - v1b, sigma)):
                     self.__vertex_a = v0b
-                elif reduce(tol_comp, c_in_tol(v0b.coords - v1a.coords, sigma)) or reduce(tol_comp, c_in_tol(v0b.coords - v1b.coords, sigma)):
+                elif reduce(tol_comp, c_in_tol(v0b - v1a, sigma)) or reduce(tol_comp, c_in_tol(v0b - v1b, sigma)):
                     self.__vertex_a = v0a
                 else:
                     raise ValueError("Passed Edge objects do not share at least 1 Vertex.")
@@ -120,19 +120,19 @@ class Face:
             else:
                 # Vertex and Edge initialization mode
                 args = [element_0, element_1]
-                self.__vertex_a = next(filter(lambda a: type(a) != Edge, args))
+                self.__vertex_a = utility.vec(next(filter(lambda a: type(a) != Edge, args)))
                 utility.argcheck_type(self._argtypes_vert, self.__vertex_a)
                 arg_edge = next(filter(lambda a: type(a) == Edge, args))
-                self.__vertex_b = arg_edge.vertex_a
-                self.__vertex_c = arg_edge.vertex_b
+                self.__vertex_b = utility.vec(arg_edge.vertex_a)
+                self.__vertex_c = utility.vec(arg_edge.vertex_b)
         utility.argcheck_dim(self._dimension, self.__vertex_a, self.__vertex_b, self.__vertex_c)
 
         self.__edge_a = Edge(self.__vertex_a, self.__vertex_b)
         self.__edge_b = Edge(self.__vertex_b, self.__vertex_c)
         self.__edge_c = Edge(self.__vertex_c, self.__vertex_a)
 
-        self.__vector_u = self.__vertex_b.coords - self.__vertex_a.coords
-        self.__vector_v = self.__vertex_c.coords - self.__vertex_a.coords
+        self.__vector_u = self.__vertex_b - self.__vertex_a
+        self.__vector_v = self.__vertex_c - self.__vertex_a
         self.__normal = cross(self.__vector_u, self.__vector_v)
 
     def __recalc_edges(self):
@@ -158,11 +158,10 @@ class Face:
         else:
             raise ValueError(f"No edge {edge_id} in Face")
 
-
     def __recalc_normal(self):
         """(Re)Calculates normal of Face"""
-        self.__vector_u = self.__vertex_b.coords - self.__vertex_a.coords
-        self.__vector_v = self.__vertex_c.coords - self.__vertex_a.coords
+        self.__vector_u = self.__vertex_b - self.__vertex_a
+        self.__vector_v = self.__vertex_c - self.__vertex_a
         self.__normal = cross(self.__vector_u, self.__vector_v)
 
     def flip(self):
@@ -173,37 +172,37 @@ class Face:
 
     @property
     def vertex_a(self):
-        return self.__vertex_a
+        return Vertex(self.__vertex_a)
 
     @vertex_a.setter
     def vertex_a(self, new_vert):
         utility.argcheck_type(self._argtypes_vert, new_vert)
         utility.argcheck_dim(self._dimension, new_vert)
-        self.__vertex_a = new_vert
+        self.__vertex_a = utility.vec(new_vert)
         self.__recalc_edges()
         self.__recalc_normal()
 
     @property
     def vertex_b(self):
-        return self.__vertex_b
+        return Vertex(self.__vertex_b)
 
     @vertex_b.setter
     def vertex_b(self, new_vert):
         utility.argcheck_type(self._argtypes_vert, new_vert)
         utility.argcheck_dim(self._dimension, new_vert)
-        self.__vertex_b = new_vert
+        self.__vertex_b = utility.vec(new_vert)
         self.__recalc_edges()
         self.__recalc_normal()
 
     @property
     def vertex_c(self):
-        return self.__vertex_c
+        return Vertex(self.__vertex_c)
 
     @vertex_c.setter
     def vertex_c(self, new_vert):
         utility.argcheck_type(self._argtypes_vert, new_vert)
         utility.argcheck_dim(self._dimension, new_vert)
-        self.__vertex_c = new_vert
+        self.__vertex_c = utility.vec(new_vert)
         self.__recalc_edges()
         self.__recalc_normal()
 
